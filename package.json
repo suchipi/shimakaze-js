@@ -1,0 +1,37 @@
+{
+  "name": "shimakaze-js",
+  "version": "0.1.0",
+  "description": "CLI tool for harsubbing and streaming video. Uses ffmpeg and mkvtoolnix",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suchipi/shimakaze-js.git"
+  },
+  "keywords": [
+    "video",
+    "ffmpeg",
+    "mkvtoolnix",
+    "hardsub",
+    "stream",
+    "rtmp"
+  ],
+  "author": "Stephen Scott <me@suchipi.com> (http://suchipi.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/suchipi/shimakaze-js/issues"
+  },
+  "homepage": "https://github.com/suchipi/shimakaze-js#readme",
+  "devDependencies": {
+    "jest": "^18.1.0"
+  },
+  "dependencies": {
+    "shelljs": "^0.7.6",
+    "yargs": "^6.6.0"
+  },
+  "bin": {
+    "shimakaze": "./cli.js"
+  }
+}
