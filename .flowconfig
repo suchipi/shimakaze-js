@@ -1,0 +1,9 @@
+[ignore]
+.*/dist/.*
+.*\.test\.js
+
+[include]
+
+[libs]
+
+[options]
