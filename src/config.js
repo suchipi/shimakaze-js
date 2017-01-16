@@ -1,4 +1,6 @@
 // @flow
+import path from 'path';
+
 type BaseConfig = {
   audioTrack: number,
   subtitleTrack: number,
@@ -18,6 +20,7 @@ export type InputConfig = BaseConfig & {
 export type Config = BaseConfig & {
   input: string,
   output?: string,
+  outputType: 'none' | 'rtmp' | 'file',
 };
 
 const defaults: BaseConfig = {
@@ -42,17 +45,33 @@ function parse(config: InputConfig): Config {
   } = config;
 
   let input;
-  let output;
   if (Array.isArray(config._)) {
     input = config._[0];
-    output = config._[1];
   } else if (typeof config.input === 'string') {
     input = config.input;
-    if (typeof config.output === 'string') {
-      output = config.output;
-    }
   } else {
-    throw new Error('You must specify input');
+    throw new Error('Invalid input config value provided');
+  }
+  input = path.resolve(input);
+
+  let output;
+  if (Array.isArray(config._)) {
+    output = config._[1];
+  } else if (typeof config.output === 'string') {
+    output = config.output;
+  }
+
+  let outputType;
+  if (extractFonts && !hardsub) {
+    outputType = 'none';
+  } else if (typeof output === 'string' && (output.startsWith('rtmp') || output.startsWith('RTMP'))) {
+    outputType = 'rtmp';
+  } else {
+    outputType = 'file';
+  }
+
+  if (outputType === 'file' && typeof output === 'string') {
+    output = path.resolve(output);
   }
 
   return {
@@ -65,6 +84,7 @@ function parse(config: InputConfig): Config {
     ffmpegOptions,
     input,
     output,
+    outputType,
   };
 }
 

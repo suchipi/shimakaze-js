@@ -1,4 +1,5 @@
-import { defaults, parse } from './config';
+import path from 'path';
+import { defaults, parse as realParse } from './config';
 
 const options = [
   'audioTrack',
@@ -19,51 +20,116 @@ describe('defaults', () => {
 });
 
 describe('parse', () => {
-  it('returns an object with a key for every option', () => {
-    const result = parse({ input: 'file.mkv' });
-    options.forEach((option) => {
-      expect(result[option]).toBeDefined();
-    });
-  });
+  let parse;
+  Object.entries({
+    'using input/output config entries': () => { parse = realParse; },
+    'using yargs-style input/output': () => {
+      parse = ({ input, output, ...rest }) => {
+        const _ = [];
+        if (input) _.push(input);
+        if (output) _.push(output);
+        return realParse({ _, ...rest });
+      };
+    },
+  }).forEach(([description, beforeCallback]) => {
+    beforeEach(beforeCallback);
 
-  it('defaults every option to its default value if not provided', () => {
-    options.forEach((option) => {
-      const result = parse({ input: 'file.mkv' });
-      expect(result[option]).toBe(defaults[option]);
-    });
-  });
+    describe(description, () => {
+      it('returns an object with a key for every option', () => {
+        const config = parse({ input: 'file.mkv' });
+        options.forEach((option) => {
+          expect(config[option]).toBeDefined();
+        });
+      });
 
-  it('uses passed values instead of defaults if provided', () => {
-    options.forEach((option) => {
-      const result = parse({ [option]: 'something', input: 'file.mkv' });
-      expect(result[option]).toBe('something');
-    });
-  });
+      it('defaults every option to its default value if not provided', () => {
+        options.forEach((option) => {
+          const config = parse({ input: 'file.mkv' });
+          expect(config[option]).toBe(defaults[option]);
+        });
+      });
 
-  describe('extractFonts', () => {
-    it('is set to true when hardsub is true', () => {
-      const result = parse({ hardsub: true, input: 'file.mkv' });
-      expect(result.extractFonts).toBe(true);
-    });
-  });
+      it('uses passed values instead of defaults if provided', () => {
+        options.forEach((option) => {
+          const config = parse({ [option]: 'something', input: 'file.mkv' });
+          expect(config[option]).toBe('something');
+        });
+      });
 
-  describe('input/output', () => {
-    it('can get them from input/output entries', () => {
-      const result = parse({ input: 'foo', output: 'bar' });
-      expect(result.input).toBe('foo');
-      expect(result.output).toBe('bar');
-    });
+      describe('extractFonts', () => {
+        it('is set to true when hardsub is true', () => {
+          const config = parse({ hardsub: true, input: 'file.mkv' });
+          expect(config.extractFonts).toBe(true);
+        });
+      });
 
-    it('can get them from a yargs-style command array', () => {
-      const result = parse({ _: ['foo', 'bar'] });
-      expect(result.input).toBe('foo');
-      expect(result.output).toBe('bar');
-    });
+      describe('input/output/outputType', () => {
+        const absPath = pathPart => path.join(process.cwd(), pathPart);
 
-    it('cannot do a mix of both', () => {
-      const result = parse({ _: ['foo'], output: 'bar' });
-      expect(result.input).toBe('foo');
-      expect(result.output).not.toBeDefined();
+        it('errors if no input is provided', () => {
+          expect(() => {
+            parse({});
+          }).toThrow();
+        });
+
+        describe('when extractFonts is requested and not hardsub', () => {
+          let config;
+          beforeEach(() => {
+            config = parse({ extractFonts: true, input: 'file.mkv' });
+          });
+
+          it('returns "none" as the outputType', () => {
+            expect(config.outputType).toBe('none');
+          });
+
+          it('parses the input into an absolute path', () => {
+            expect(config.input).toBe(absPath('file.mkv'));
+          });
+
+          it('does not return an output', () => {
+            expect(config.output).not.toBeDefined();
+          });
+        });
+
+        describe('when using an rtmp server as the output path', () => {
+          const rtmpServer = 'rtmp://example.com/my-server/live';
+          let config;
+          beforeEach(() => {
+            config = parse({ input: 'file.mkv', output: rtmpServer });
+          });
+
+          it('returns "rtmp" as the outputType', () => {
+            expect(config.outputType).toBe('rtmp');
+          });
+
+          it('parses the input into an absolute path', () => {
+            expect(config.input).toBe(absPath('file.mkv'));
+          });
+
+          it('passes the output through unmodified', () => {
+            expect(config.output).toBe(rtmpServer);
+          });
+        });
+
+        describe('when outputting to file', () => {
+          let config;
+          beforeEach(() => {
+            config = parse({ input: 'file.mkv', output: 'file.mp4' });
+          });
+
+          it('returns "rtmp" as the outputType', () => {
+            expect(config.outputType).toBe('file');
+          });
+
+          it('parses the input into an absolute path', () => {
+            expect(config.input).toBe(absPath('file.mkv'));
+          });
+
+          it('parses the output into an absolute path', () => {
+            expect(config.output).toBe(absPath('file.mp4'));
+          });
+        });
+      });
     });
   });
 });
