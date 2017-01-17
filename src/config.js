@@ -1,65 +1,57 @@
 // @flow
 import path from 'path';
 
-type BaseConfig = {
-  audioTrack: number,
-  subtitleTrack: number,
-  videoTrack: number,
-  hardsub: boolean,
-  extractFonts: boolean,
-  ffmpegOptions: string,
-  startTime: number,
-}
-
-export type InputConfig = BaseConfig & {
-  _?: string[],
-  input?: string,
+export type InputConfig = {
+  audioTrack?: number,
+  subtitleTrack?: number,
+  videoTrack?: number,
+  hardsub?: boolean,
+  extractFonts?: boolean,
+  startTime?: number,
+  input: string,
   output?: string,
 };
 
-export type Config = BaseConfig & {
-  input: string,
-  output?: string,
+export type Config = InputConfig & {
   outputType: 'none' | 'rtmp' | 'file',
 };
 
-const defaults: BaseConfig = {
+const defaults = {
   audioTrack: 0,
   subtitleTrack: 0,
   videoTrack: 0,
   hardsub: false,
   extractFonts: false,
-  ffmpegOptions: '',
   startTime: 0,
 };
 
 function parse(config: InputConfig): Config {
   const {
     hardsub = defaults.hardsub,
-    extractFonts = hardsub,
     audioTrack = defaults.audioTrack,
     subtitleTrack = defaults.subtitleTrack,
     videoTrack = defaults.videoTrack,
     startTime = defaults.startTime,
-    ffmpegOptions = defaults.ffmpegOptions,
   } = config;
 
-  let input;
-  if (Array.isArray(config._)) {
-    input = config._[0];
-  } else if (typeof config.input === 'string') {
-    input = config.input;
-  } else {
+  let {
+    extractFonts,
+    input,
+    output,
+  } = config;
+
+  if (hardsub && extractFonts == null) {
+    extractFonts = true;
+  }
+
+  if (extractFonts == null) {
+    extractFonts = false;
+  }
+
+  if (typeof input !== 'string') {
     throw new Error('Invalid input config value provided');
   }
   input = path.resolve(input);
-
-  let output;
-  if (Array.isArray(config._)) {
-    output = config._[1];
-  } else if (typeof config.output === 'string') {
-    output = config.output;
-  }
 
   let outputType;
   if (extractFonts && !hardsub) {
@@ -81,7 +73,6 @@ function parse(config: InputConfig): Config {
     subtitleTrack,
     videoTrack,
     startTime,
-    ffmpegOptions,
     input,
     output,
     outputType,
