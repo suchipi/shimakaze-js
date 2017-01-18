@@ -2,9 +2,14 @@
 let mockCode;
 let mockStdout;
 let mockStderr;
-jest.mock('shelljs', () => ({
+jest.mock('child_process', () => ({
   exec: (command, options, callback) => {
-    callback(mockCode, mockStdout, mockStderr);
+    let error = null;
+    if (mockCode !== 0) {
+      error = new Error('Shell execution failed');
+      error.code = mockCode;
+    }
+    callback(error, mockStdout, mockStderr);
   },
 }));
 
