@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // @flow
-
-import run from './index';
+import parseAndRun from './index';
 import parseCliArgv from './parseCliArgv';
 
-run(parseCliArgv(process.argv));
+parseAndRun(parseCliArgv(process.argv)).catch((err) => {
+  console.error(err); // eslint-disable-line no-console
+  process.exit(-1);
+});
